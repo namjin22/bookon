@@ -3,7 +3,8 @@
 응용프로그래밍 개발 2학기 팀 프로젝트. 도서·학생·대출·반납을 관리하는 웹 애플리케이션.
 
 - 스택: Eclipse Dynamic Web Project, Tomcat, Java, JSP/Servlet, JDBC, Oracle 11g XE, HTML/CSS/JS
-- Tomcat/JDK 버전: **수업 PC 기준으로 확인 후 확정** (확정되면 이 줄을 고친다)
+- 개발·시연 환경(전원 동일하게 맞춘다): **JDK 21 + Apache Tomcat 10.1 + Eclipse (Dynamic Web Project, Tomcat v10.1 런타임)**
+  - 서블릿은 `jakarta.servlet`, JSP의 JSTL은 Jakarta JSTL(`jakarta.tags.core`)을 쓴다. (`javax.servlet`은 쓰지 않는다)
 - 계약(URL·파라미터·필드명·규칙)은 [docs/contract.md](docs/contract.md)가 기준이다.
 
 ## 팀과 담당 폴더

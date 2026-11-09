@@ -67,5 +67,7 @@
 ## 7. 환경
 
 - DB: `jdbc:oracle:thin:@localhost:1521:XE`, 드라이버 `oracle.jdbc.OracleDriver`, 접속 정보는 `db.properties`(커밋 금지)
-- Tomcat/JDK: 수업 PC 기준으로 확인 후 확정. 현재 3번 PC는 Tomcat 10.1.52 + JDK 21 + `jakarta.servlet`.
-  Tomcat 9면 `javax.servlet`과 JSTL 1.2, Tomcat 10 이상이면 `jakarta.servlet`과 Jakarta JSTL을 쓴다.
+- 확정 환경: **JDK 21 + Tomcat 10.1 + `jakarta.servlet`** (3번 PC에서 실제 Tomcat·Oracle로 검증한 조합). 전원 노트북을 이 버전에 맞춘다.
+- JSP에서 JSTL을 쓸 때: `<%@ taglib prefix="c" uri="jakarta.tags.core" %>` (예전 `http://java.sun.com/jsp/jstl/core` 주소는 쓰지 않는다)
+  `WEB-INF/lib`에 Jakarta JSTL 3.0의 API jar와 구현 jar 두 개가 모두 필요하다. (화면 담당이 넣는다)
+- 제출용 소스에도 이 환경을 README에 적어 둔다. (선생님이 열어볼 때 버전이 달라 보이지 않게)
