@@ -1,0 +1,6 @@
+-- 비번은 디코 참고 (실행하면 비밀번호를 물어봅니다. 디코에서 받은 값을 입력하세요)
+SET VERIFY OFF
+CREATE USER bookon IDENTIFIED BY &bookon_pw DEFAULT TABLESPACE USERS QUOTA UNLIMITED ON USERS;
+GRANT CREATE SESSION, CREATE TABLE, CREATE SEQUENCE TO bookon;
+
+SELECT username FROM dba_users WHERE username = 'BOOKON';
