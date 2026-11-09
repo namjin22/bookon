@@ -1,0 +1,5 @@
+<%@ page pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%-- 공통 헤더. 포함하는 JSP에서 <c:set var="activeMenu" value="home|book|student|loan"/>을 먼저 지정한다. --%>
+<c:set var="ctx" value="${pageContext.request.contextPath}"/>
+<header class="header"><div class="header-inner"><a class="logo" href="${ctx}/main">도서 대출 관리</a><nav class="nav"><a class="nav-link ${activeMenu == 'home' ? 'active' : ''}" href="${ctx}/main">홈</a><a class="nav-link ${activeMenu == 'book' ? 'active' : ''}" href="${ctx}/book/list">도서</a><a class="nav-link ${activeMenu == 'student' ? 'active' : ''}" href="${ctx}/student/list">학생</a><a class="nav-link ${activeMenu == 'loan' ? 'active' : ''}" href="${ctx}/loan/list">대출</a></nav></div></header>
