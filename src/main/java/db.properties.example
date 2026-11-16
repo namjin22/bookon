@@ -1,0 +1,6 @@
+# Copy this file to db.properties, then enter your real database settings.
+# Example URL only: confirm host, port and SID with your DB teammate.
+db.url=jdbc:oracle:thin:@localhost:1521:XE
+db.user=YOUR_DB_USER
+db.password=YOUR_DB_PASSWORD
+db.driver=oracle.jdbc.OracleDriver
