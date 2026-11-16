@@ -19,6 +19,7 @@
 <c:choose>
 <c:when test="${param.msg == 'borrowed'}"><p class="message message-success">대출이 등록되었습니다.</p></c:when>
 <c:when test="${param.msg == 'returned'}"><p class="message message-success">반납 처리되었습니다.</p></c:when>
+<c:when test="${param.msg == 'returnedLate'}"><p class="message message-info">반납 처리되었습니다. 연체 <c:out value="${param.days}"/>일 → <c:out value="${param.days}"/>일간 대출 정지</p></c:when>
 <c:when test="${param.msg == 'alreadyReturned'}"><p class="message message-info">이미 반납 처리된 대출입니다.</p></c:when>
 </c:choose>
 <c:if test="${not empty error}"><p class="message message-error"><c:out value="${error}"/></p></c:if>
@@ -37,15 +38,17 @@
 </form>
 
 <section class="panel"><div class="panel-header"><h2 class="panel-title">도서 대출 등록</h2></div><div class="panel-content">
+<c:if test="${maxLoanCount > 0}"><p class="message message-info">1인 최대 <c:out value="${maxLoanCount}"/>권까지 대출할 수 있습니다. 대출 정지·연체 중인 학생은 대출할 수 없습니다.</p></c:if>
 <form action="${ctx}/loan/borrow" method="post" data-url="/loan/borrow" data-disable-submit novalidate>
 <div class="form-group${not empty errors.studentId ? ' invalid' : ''}"><label for="studentId">학생 <span>*</span></label><select class="form-select" id="studentId" name="studentId" data-validate="required" required aria-describedby="studentId-error">
 <option value="">학생을 선택하세요</option>
-<c:forEach items="${activeStudents}" var="s"><option value="<c:out value="${s.studentId}"/>"${param.studentId == s.studentId ? ' selected' : ''}><c:out value="${s.studentNo}"/> <c:out value="${s.studentName}"/></option></c:forEach>
+<%-- 표시 우선순위는 학생 목록과 같다: 대출 정지 > 연체 중 > 한도 --%>
+<c:forEach items="${activeStudents}" var="s"><option value="<c:out value="${s.studentId}"/>"${param.studentId == s.studentId ? ' selected' : ''}><c:out value="${s.studentNo}"/> <c:out value="${s.studentName}"/> · <c:choose><c:when test="${s.penalized}">대출 정지 (<c:out value="${s.penaltyEndDate}"/>부터 가능)</c:when><c:when test="${s.overdueCount > 0}">연체 중</c:when><c:when test="${maxLoanCount > 0 and s.loanCount >= maxLoanCount}">한도 초과 <c:out value="${s.loanCount}"/>/<c:out value="${maxLoanCount}"/></c:when><c:otherwise>대출 <c:out value="${s.loanCount}"/>/<c:out value="${maxLoanCount}"/></c:otherwise></c:choose></option></c:forEach>
 </select><span class="form-error" id="studentId-error"><c:out value="${errors.studentId}"/></span></div>
 
 <div class="form-group${not empty errors.bookId ? ' invalid' : ''}"><label for="bookId">도서 <span>*</span></label><select class="form-select" id="bookId" name="bookId" data-validate="required" required aria-describedby="bookId-error">
 <option value="">도서를 선택하세요</option>
-<c:forEach items="${availableBooks}" var="b"><option value="<c:out value="${b.bookId}"/>"${param.bookId == b.bookId ? ' selected' : ''}><c:out value="${b.title}"/> (대출 가능 <c:out value="${b.availQty}"/>권)</option></c:forEach>
+<c:forEach items="${availableBooks}" var="b"><option value="<c:out value="${b.bookId}"/>"${param.bookId == b.bookId ? ' selected' : ''}>[<c:out value="${b.bookId}"/>] <c:out value="${b.title}"/> (대출 가능 <c:out value="${b.availQty}"/>권)</option></c:forEach>
 </select><span class="form-error" id="bookId-error"><c:out value="${errors.bookId}"/></span></div>
 
 <div class="form-group${not empty errors.dueDate ? ' invalid' : ''}"><label for="dueDate">반납 예정일 <span>*</span></label><input class="form-input" type="date" id="dueDate" name="dueDate" data-validate="required" required aria-describedby="dueDate-error" value="<c:out value="${param.dueDate}"/>"><span class="form-error" id="dueDate-error"><c:out value="${errors.dueDate}"/></span></div>

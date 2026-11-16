@@ -38,7 +38,13 @@
 <td><c:out value="${student.studentNo}"/></td>
 <td><c:out value="${student.studentName}"/></td>
 <td class="col-optional"><c:out value="${empty student.phone ? '-' : student.phone}"/></td>
-<td><c:choose><c:when test="${student.useYn == 'N'}"><span class="badge badge-secondary">사용 안 함</span></c:when><c:otherwise><span class="badge badge-success">이용 가능</span></c:otherwise></c:choose></td>
+<%-- 상태 우선순위: 이용 안 함 > 대출 정지 > 연체 중 > 이용 가능 (contract §8-2) --%>
+<td><c:choose>
+<c:when test="${student.useYn == 'N'}"><span class="badge badge-secondary">이용 안 함</span></c:when>
+<c:when test="${student.penalized}"><span class="badge badge-danger" title="<c:out value="${student.penaltyEndDate}"/>부터 대출 가능">대출 정지</span></c:when>
+<c:when test="${student.overdueCount > 0}"><span class="badge badge-warning">연체 중</span></c:when>
+<c:otherwise><span class="badge badge-success">이용 가능</span></c:otherwise>
+</c:choose><span class="loan-count">대출 중 <c:out value="${student.loanCount}"/>/<c:out value="${maxLoanCount}"/></span></td>
 <td><a class="button button-small button-secondary" href="${ctx}/student/form?id=<c:out value="${student.studentId}"/>">수정</a>
 <form style="display:inline" action="${ctx}/student/delete" method="post" data-url="/student/delete"><input type="hidden" name="studentId" value="<c:out value="${student.studentId}"/>"><button class="button button-small button-danger" type="submit" data-confirm="이 학생을 삭제할까요?">삭제</button></form></td>
 </tr>

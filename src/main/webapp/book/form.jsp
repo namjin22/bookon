@@ -2,8 +2,8 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
 <c:set var="activeMenu" value="book"/>
-<%-- bookId가 있으면 수정 모드 --%>
-<c:set var="editMode" value="${book.bookId > 0}"/>
+<%-- bookId(도서 코드, 예: 813-001)가 있으면 수정 모드 --%>
+<c:set var="editMode" value="${not empty book.bookId}"/>
 <c:set var="pageName" value="${editMode ? '도서 수정' : '도서 등록'}"/>
 <%-- 전체 수량: 서버가 돌려준 원래 입력(totalQtyInput)을 우선 사용 --%>
 <c:choose>
@@ -29,7 +29,15 @@
 
 <section class="panel"><div class="panel-header"><h2 class="panel-title">도서 정보</h2></div><div class="panel-content">
 <form action="${ctx}/book/save" method="post" data-url="/book/save" data-disable-submit novalidate>
-<c:if test="${editMode}"><input type="hidden" name="bookId" value="<c:out value="${book.bookId}"/>"></c:if>
+<c:choose>
+<c:when test="${editMode}">
+<input type="hidden" name="bookId" value="<c:out value="${book.bookId}"/>">
+<div class="form-group"><label for="bookCode">도서 코드</label><input class="form-input" id="bookCode" value="<c:out value="${book.bookId}"/>" readonly aria-readonly="true"><span class="text-muted">도서 코드는 등록 후 바꿀 수 없습니다.</span></div>
+</c:when>
+<c:otherwise>
+<div class="form-group${not empty errors.kdc ? ' invalid' : ''}"><label for="kdc">분류번호 <span>*</span></label><input class="form-input" id="kdc" name="kdc" maxlength="3" inputmode="numeric" placeholder="KDC 3자리 (예: 813)" data-validate="kdc" required aria-describedby="kdc-error"${not empty errors.kdc ? ' aria-invalid="true"' : ''} value="<c:out value="${param.kdc}"/>"><span class="form-error" id="kdc-error"><c:out value="${errors.kdc}"/></span></div>
+</c:otherwise>
+</c:choose>
 
 <div class="form-group${not empty errors.title ? ' invalid' : ''}"><label for="title">도서명 <span>*</span></label><input class="form-input" id="title" name="title" maxlength="300" placeholder="도서명을 입력하세요" data-validate="required" required aria-describedby="title-error"${not empty errors.title ? ' aria-invalid="true"' : ''} value="<c:out value="${book.title}"/>"><span class="form-error" id="title-error"><c:out value="${errors.title}"/></span></div>
 

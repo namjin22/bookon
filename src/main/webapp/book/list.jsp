@@ -31,12 +31,13 @@
 </form>
 
 <section class="panel"><div class="panel-header"><h2 class="panel-title">도서 목록</h2></div><div class="table-wrap"><table class="data-table">
-<thead><tr><th>도서명</th><th>저자</th><th class="col-optional">출판사</th><th>대출 가능 / 전체</th><th>상태</th><th>관리</th></tr></thead>
+<thead><tr><th>도서 코드</th><th>도서명</th><th class="col-optional">저자</th><th class="col-optional">출판사</th><th>대출 가능 / 전체</th><th>상태</th><th>관리</th></tr></thead>
 <tbody>
 <c:forEach items="${books}" var="book">
 <tr>
+<td class="code-cell"><c:out value="${book.bookId}"/></td>
 <td><c:out value="${book.title}"/></td>
-<td><c:out value="${book.author}"/></td>
+<td class="col-optional"><c:out value="${book.author}"/></td>
 <td class="col-optional"><c:out value="${empty book.publisher ? '-' : book.publisher}"/></td>
 <td><c:out value="${book.availQty}"/> / <c:out value="${book.totalQty}"/></td>
 <td><c:choose><c:when test="${book.availQty > 0}"><span class="badge badge-success">대출 가능</span></c:when><c:otherwise><span class="badge badge-warning">대출 중</span></c:otherwise></c:choose></td>
@@ -45,7 +46,7 @@
 </tr>
 </c:forEach>
 <c:if test="${empty books}">
-<tr><td colspan="6" class="empty-state"><c:choose><c:when test="${not empty param.keyword}">검색 결과가 없습니다.</c:when><c:otherwise>등록된 도서가 없습니다.</c:otherwise></c:choose></td></tr>
+<tr><td colspan="7" class="empty-state"><c:choose><c:when test="${not empty param.keyword}">검색 결과가 없습니다.</c:when><c:otherwise>등록된 도서가 없습니다.</c:otherwise></c:choose></td></tr>
 </c:if>
 </tbody></table></div></section>
 </main>

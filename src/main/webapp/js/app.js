@@ -44,7 +44,8 @@ function validateField(field) {
     else if (type === "quantity") {
         const n = Number(value);
         if (value === "" || !Number.isInteger(n) || n < 1 || n > 999) message = "수량은 1~999 사이의 정수로 입력해 주세요.";
-    } else if (type === "studentNo" && !/^\d{4,10}$/.test(value)) message = "학번은 숫자 4~10자리로 입력해 주세요.";
+    } else if (type === "kdc" && !/^\d{3}$/.test(value)) message = "분류번호는 숫자 3자리로 입력해 주세요.";
+    else if (type === "studentNo" && !/^\d{4,10}$/.test(value)) message = "학번은 숫자 4~10자리로 입력해 주세요.";
     else if (type === "phone" && value !== "") {
         if (!/^(01[016789]-\d{3,4}-\d{4}|0\d{1,2}-\d{3,4}-\d{4})$/.test(value)) message = "연락처를 010-1234-5678 형식으로 입력해 주세요.";
     }
