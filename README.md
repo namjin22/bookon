@@ -33,6 +33,7 @@
 
 1. Oracle 11g XE를 설치한다. 각자 자기 PC의 DB를 쓴다.
 2. `sql/`의 스크립트를 순서대로 실행한다: `00_create_user.sql`(system 계정) → `01_create_tables.sql` → `02_sample_data.sql`
+   - `02_sample_data.sql`은 UTF-8 파일이다. cmd에서 `sqlplus`를 켜기 전에 같은 창에서 `set NLS_LANG=KOREAN_KOREA.AL32UTF8`을 먼저 입력한 뒤 `bookon`으로 접속해 `@sql/02_sample_data.sql`을 실행해야 한글이 깨지지 않는다.
 3. `src/main/java/db.properties.example`을 `db.properties`로 복사하고 접속 정보를 넣는다. (커밋하지 않는다)
 4. Eclipse에서 이 레포를 가져온다. (프로젝트 뼈대가 올라오면 안내를 추가한다)
 
