@@ -1,0 +1,52 @@
+StudentDAO check on real Oracle
+connected as: BOOKON / at 2026-11-16 12:06:27
+baseline: students=8 loans=11 (clean v2 sample data = 8 / 11)
+PASS  insert then search by student no returns 1 row
+PASS  empty phone stored as NULL, USE_YN=Y, id and regDate set
+PASS  findById returns the same student (Korean name intact)
+PASS  findById of unknown id returns null
+PASS  new student: penaltyEndDate null, not penalized, 0 loans, 0 overdue
+PASS  duplicate insert -> isDuplicateStudentNo is true
+      oracle said: ORA-00001: unique constraint (BOOKON.UQ_STUDENT_NO) violated (code 1)
+PASS  duplicate insert left exactly 1 row
+PASS  30 Korean characters fit VARCHAR2(30 CHAR)
+PASS  31 characters -> error that is NOT treated as duplicate
+      oracle said: ORA-12899: value too large for column "BOOKON"."TBL_STUDENT"."STUDENT_NAME" (actual: 31, maximum: 30)
+PASS  update returns true
+PASS  update saved no/name/phone
+PASS  update to duplicate student no -> isDuplicateStudentNo is true
+PASS  update of unknown id returns false
+PASS  search by name part, case-insensitive ('alice')
+PASS  search by student no part ('99900')
+PASS  search by Korean name part
+PASS  search with no match returns empty list
+PASS  findAll excludes inactive students
+PASS  deactivate student without loans returns true
+PASS  deactivated student is hidden but the row still exists with USE_YN='N'
+PASS  deactivating again returns false
+PASS  deactivate unknown id returns false
+PASS  student with only RETURNED loans can be deactivated
+PASS  countUnreturnedLoans counts 2 (one not due yet, one overdue)
+PASS  student with unreturned loans is NOT deactivated
+PASS  blocked student is still active
+PASS  after returning everything the same student can be deactivated
+PASS  sample 20308 (limit): 3 unreturned, 0 overdue, no penalty
+PASS  sample 20215 (suspended): penalized, penalty ends today+2, 0 loans
+PASS  sample 20102 (penalty ended): NOT penalized, penalty date today-8 kept, 0 loans
+PASS  sample 10112 and 10227 (overdue): 1 unreturned, 1 overdue, no penalty
+PASS  sample 20101 (normal): 1 unreturned, 0 overdue
+PASS  findById returns the same v2 fields as search (20215)
+PASS  PENALTY_END_DATE = today -> NOT penalized (loans allowed again)
+PASS  PENALTY_END_DATE = tomorrow -> penalized
+PASS  update of a penalized student returns true
+PASS  update does not change the penalty date (still penalized, same date)
+PASS  counts: 3 unreturned (returned loan ignored), 1 overdue (due today is not overdue)
+PASS  search returns the same counts
+PASS  after returning all: 0 unreturned, 0 overdue, still penalized
+PASS  a penalized student without unreturned loans can be deactivated
+PASS  sample student 20308 (3 unreturned loans) is protected from deletion
+PASS  cleanup: test students removed
+PASS  cleanup: student and loan counts back to baseline
+
+ORA-12519 retries (XE connection limit, handled by waiting): 3
+RESULT: pass=44 fail=0  => ALL PASS
