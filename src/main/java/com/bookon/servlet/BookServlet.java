@@ -13,7 +13,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-@WebServlet({"/book/list", "/book/form", "/book/save"})
+@WebServlet({"/book/list", "/book/form", "/book/save", "/book/delete"})
 public class BookServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private final BookDAO bookDAO = new BookDAO();
@@ -27,7 +27,7 @@ public class BookServlet extends HttpServlet {
             showList(request, response);
             break;
         case "/book/form":
-            request.getRequestDispatcher("/book/form.jsp").forward(request, response);
+            showForm(request, response);
             break;
         default:
             response.setHeader("Allow", "POST");
@@ -39,31 +39,76 @@ public class BookServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        if (!"/book/save".equals(request.getServletPath())) {
+        switch (request.getServletPath()) {
+        case "/book/save" -> save(request, response);
+        case "/book/delete" -> delete(request, response);
+        default -> {
             response.setHeader("Allow", "GET");
             response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
-            return;
         }
-        save(request, response);
+        }
     }
 
     // DB 오류는 로그에 기록하고, 화면에는 안전한 안내 문구만 전달합니다.
     private void showList(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         try {
-            request.setAttribute("books", bookDAO.findAll());
+            request.setAttribute("books", bookDAO.search(value(request, "keyword")));
         } catch (SQLException e) {
             getServletContext().log("도서 목록 조회 실패", e);
             request.setAttribute("books", Collections.emptyList());
-            request.setAttribute("error", "도서 목록을 불러오지 못했습니다. 잠시 후 다시 시도하세요.");
+            if (request.getAttribute("error") == null) {
+                request.setAttribute("error", "도서 목록을 불러오지 못했습니다. 잠시 후 다시 시도하세요.");
+            }
         }
         request.getRequestDispatcher("/book/list.jsp").forward(request, response);
+    }
+
+    private void showForm(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        if (request.getParameter("id") != null) {
+            try {
+                int id = parseId(value(request, "id"));
+                Book book = id > 0 ? bookDAO.findById(id) : null;
+                if (book == null) {
+                    request.setAttribute("error", "수정할 도서를 찾을 수 없습니다.");
+                    showList(request, response);
+                    return;
+                }
+                request.setAttribute("book", book);
+            } catch (SQLException e) {
+                getServletContext().log("도서 조회 실패", e);
+                request.setAttribute("error", "도서 정보를 불러오지 못했습니다.");
+                showList(request, response);
+                return;
+            }
+        }
+        request.getRequestDispatcher("/book/form.jsp").forward(request, response);
+    }
+
+    private void delete(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        int id = parseId(value(request, "bookId"));
+        try {
+            if (id > 0 && bookDAO.deactivate(id)) {
+                redirect(request, response, "deleted");
+                return;
+            }
+            request.setAttribute("error", "도서가 없거나 대출 중인 도서라 삭제할 수 없습니다.");
+        } catch (SQLException e) {
+            getServletContext().log("도서 삭제 실패", e);
+            request.setAttribute("error", "도서를 삭제하지 못했습니다.");
+        }
+        showList(request, response);
     }
 
     // 입력값을 검증하고 저장합니다. 성공 후 redirect하여 새로고침 재등록을 막습니다.
     private void save(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         Book book = new Book();
+        String bookId = value(request, "bookId");
+        boolean editing = !bookId.isEmpty();
+        if (editing) book.setBookId(parseId(bookId));
         book.setTitle(value(request, "title"));
         book.setAuthor(value(request, "author"));
         book.setPublisher(value(request, "publisher"));
@@ -85,9 +130,9 @@ public class BookServlet extends HttpServlet {
         request.setAttribute("totalQtyInput", request.getParameter("totalQty"));
         request.setAttribute("book", book);
         request.setAttribute("errors", errors);
-        if (!value(request, "bookId").isEmpty()) {
-            request.setAttribute("error", "1단계에서는 새 도서 등록만 지원합니다.");
-            request.getRequestDispatcher("/book/form.jsp").forward(request, response);
+        if (editing && book.getBookId() == 0) {
+            request.setAttribute("error", "올바른 도서 ID가 필요합니다.");
+            showList(request, response);
             return;
         }
         if (!errors.isEmpty()) {
@@ -95,14 +140,28 @@ public class BookServlet extends HttpServlet {
             return;
         }
         try {
-            bookDAO.insert(book);
+            if (editing && !bookDAO.update(book)) {
+                request.setAttribute("error", "도서가 없거나 전체 수량이 현재 대출 수량보다 적습니다.");
+                request.getRequestDispatcher("/book/form.jsp").forward(request, response);
+                return;
+            }
+            if (!editing) bookDAO.insert(book);
         } catch (SQLException e) {
-            getServletContext().log("도서 등록 실패", e);
-            request.setAttribute("error", "도서를 등록하지 못했습니다. 입력 내용과 DB 연결 상태를 확인하세요.");
+            getServletContext().log("도서 저장 실패", e);
+            request.setAttribute("error", "도서를 저장하지 못했습니다. 입력 내용과 DB 연결 상태를 확인하세요.");
             request.getRequestDispatcher("/book/form.jsp").forward(request, response);
             return;
         }
-        response.sendRedirect(response.encodeRedirectURL(request.getContextPath() + "/book/list?msg=saved"));
+        redirect(request, response, editing ? "updated" : "saved");
+    }
+
+    private void redirect(HttpServletRequest request, HttpServletResponse response, String message)
+            throws IOException {
+        response.sendRedirect(response.encodeRedirectURL(request.getContextPath() + "/book/list?msg=" + message));
+    }
+
+    private int parseId(String value) {
+        return value.matches("[1-9][0-9]{0,5}") ? Integer.parseInt(value) : 0;
     }
 
     // 파라미터가 없으면 빈 문자열을 반환하고, 앞뒤 공백은 제거합니다.
