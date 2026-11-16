@@ -16,7 +16,7 @@ public class LoanDAO {
     public static final int MAX_LOAN_COUNT = 3;
     public enum Status { ALL, UNRETURNED, OVERDUE, RETURNED }
     public enum BorrowResult { BORROWED, INACTIVE_STUDENT, PENALIZED, OVERDUE, LIMIT_REACHED, UNAVAILABLE }
-    public enum ReturnStatus { RETURNED, ALREADY_RETURNED, FAILED }
+    public enum ReturnStatus { RETURNED, ALREADY_RETURNED, NOT_FOUND, FAILED }
     public record ReturnResult(ReturnStatus status, int lateDays) {}
 
     // Keep these four statements in sync with sql/03_loan_return.sql.
@@ -75,7 +75,7 @@ public class LoanDAO {
             boolean committed = false;
             try {
                 int studentId = findLoanStudent(connection, loanId);
-                if (studentId == 0) return new ReturnResult(ReturnStatus.ALREADY_RETURNED, 0);
+                if (studentId == 0) return new ReturnResult(ReturnStatus.NOT_FOUND, 0);
                 // Borrow and return both take the student lock before modifying loan or stock.
                 if (!lockStudent(connection, studentId)) return new ReturnResult(ReturnStatus.FAILED, 0);
                 int updated = updateById(connection, MARK_RETURNED, loanId);
@@ -188,6 +188,14 @@ public class LoanDAO {
     }
 
     public List<Loan> findLoans(String keyword, Status status) throws SQLException {
+        return findLoans(keyword, status, false);
+    }
+
+    public List<Loan> findRecentLoans() throws SQLException {
+        return findLoans("", Status.ALL, true);
+    }
+
+    private List<Loan> findLoans(String keyword, Status status, boolean recentOnly) throws SQLException {
         String condition = switch (status) {
             case ALL -> "";
             case UNRETURNED -> " AND l.RETURN_YN = 'N'";
@@ -210,6 +218,7 @@ public class LoanDAO {
                           OR INSTR(LOWER(b.TITLE), LOWER(?)) > 0)
                     """)
                 + " ORDER BY l.LOAN_DATE DESC, l.LOAN_ID DESC";
+        if (recentOnly) sql = "SELECT * FROM (" + sql + ") WHERE ROWNUM <= 5";
         List<Loan> loans = new ArrayList<>();
         try (Connection connection = DBUtil.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {

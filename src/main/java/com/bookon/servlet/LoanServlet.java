@@ -104,6 +104,10 @@ public class LoanServlet extends HttpServlet {
                     redirect(request, response, "alreadyReturned");
                     return;
                 }
+                case NOT_FOUND -> {
+                    showError(request, response, "해당 대출 번호를 찾을 수 없습니다.");
+                    return;
+                }
                 case FAILED -> getServletContext().log("반납 재고 복구 실패: " + loanId);
             }
         } catch (SQLException e) {
