@@ -5,7 +5,7 @@ import java.sql.Date;
 public class Loan {
     private int loanId;
     private int studentId;
-    private int bookId;
+    private String bookId;
     private Date loanDate;
     private Date dueDate;
     private String returnYn;
@@ -36,12 +36,12 @@ public class Loan {
     }
 
     // bookId 값을 읽습니다.
-    public int getBookId() {
+    public String getBookId() {
         return bookId;
     }
 
     // bookId 값을 저장합니다.
-    public void setBookId(int bookId) {
+    public void setBookId(String bookId) {
         this.bookId = bookId;
     }
 

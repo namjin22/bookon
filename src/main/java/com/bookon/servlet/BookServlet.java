@@ -68,8 +68,8 @@ public class BookServlet extends HttpServlet {
             throws ServletException, IOException {
         if (request.getParameter("id") != null) {
             try {
-                int id = parseId(value(request, "id"));
-                Book book = id > 0 ? bookDAO.findById(id) : null;
+                String id = parseId(request.getParameter("id"));
+                Book book = id != null ? bookDAO.findById(id) : null;
                 if (book == null) {
                     request.setAttribute("error", "수정할 도서를 찾을 수 없습니다.");
                     showList(request, response);
@@ -88,9 +88,9 @@ public class BookServlet extends HttpServlet {
 
     private void delete(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        int id = parseId(value(request, "bookId"));
+        String id = parseId(request.getParameter("bookId"));
         try {
-            if (id > 0 && bookDAO.deactivate(id)) {
+            if (id != null && bookDAO.deactivate(id)) {
                 redirect(request, response, "deleted");
                 return;
             }
@@ -106,14 +106,19 @@ public class BookServlet extends HttpServlet {
     private void save(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         Book book = new Book();
-        String bookId = value(request, "bookId");
-        boolean editing = !bookId.isEmpty();
+        String bookId = request.getParameter("bookId");
+        boolean editing = bookId != null;
         if (editing) book.setBookId(parseId(bookId));
         book.setTitle(value(request, "title"));
         book.setAuthor(value(request, "author"));
         book.setPublisher(value(request, "publisher"));
         String quantity = value(request, "totalQty");
         Map<String, String> errors = new LinkedHashMap<>();
+        String kdc = request.getParameter("kdc");
+        request.setAttribute("kdc", kdc);
+        if (!editing && (kdc == null || !kdc.matches("[0-9]{3}"))) {
+            errors.put("kdc", "분류번호는 숫자 3자리로 입력하세요.");
+        }
         validateText(errors, "title", book.getTitle(), "제목", 300, true);
         validateText(errors, "author", book.getAuthor(), "저자", 100, true);
         validateText(errors, "publisher", book.getPublisher(), "출판사", 100, false);
@@ -130,7 +135,7 @@ public class BookServlet extends HttpServlet {
         request.setAttribute("totalQtyInput", request.getParameter("totalQty"));
         request.setAttribute("book", book);
         request.setAttribute("errors", errors);
-        if (editing && book.getBookId() == 0) {
+        if (editing && book.getBookId() == null) {
             request.setAttribute("error", "올바른 도서 ID가 필요합니다.");
             showList(request, response);
             return;
@@ -145,7 +150,11 @@ public class BookServlet extends HttpServlet {
                 request.getRequestDispatcher("/book/form.jsp").forward(request, response);
                 return;
             }
-            if (!editing) bookDAO.insert(book);
+            if (!editing) book.setBookId(bookDAO.insert(book, kdc));
+        } catch (BookDAO.CodeExhaustedException e) {
+            errors.put("kdc", "이 분류의 도서 일련번호가 모두 사용되었습니다.");
+            request.getRequestDispatcher("/book/form.jsp").forward(request, response);
+            return;
         } catch (SQLException e) {
             getServletContext().log("도서 저장 실패", e);
             request.setAttribute("error", "도서를 저장하지 못했습니다. 입력 내용과 DB 연결 상태를 확인하세요.");
@@ -160,8 +169,8 @@ public class BookServlet extends HttpServlet {
         response.sendRedirect(response.encodeRedirectURL(request.getContextPath() + "/book/list?msg=" + message));
     }
 
-    private int parseId(String value) {
-        return value.matches("[1-9][0-9]{0,5}") ? Integer.parseInt(value) : 0;
+    private String parseId(String value) {
+        return value != null && value.matches("[0-9]{3}-[0-9]{3}") ? value : null;
     }
 
     // 파라미터가 없으면 빈 문자열을 반환하고, 앞뒤 공백은 제거합니다.

@@ -3,7 +3,7 @@ package com.bookon.model;
 import java.sql.Date;
 
 public class Book {
-    private int bookId;
+    private String bookId;
     private String title;
     private String author;
     private String publisher;
@@ -13,12 +13,12 @@ public class Book {
     private Date regDate;
 
     // bookId 값을 읽습니다.
-    public int getBookId() {
+    public String getBookId() {
         return bookId;
     }
 
     // bookId 값을 저장합니다.
-    public void setBookId(int bookId) {
+    public void setBookId(String bookId) {
         this.bookId = bookId;
     }
 

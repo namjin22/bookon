@@ -46,9 +46,9 @@ public class LoanServlet extends HttpServlet {
     private void borrow(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         int studentId = parseId(request.getParameter("studentId"), 6);
-        int bookId = parseId(request.getParameter("bookId"), 6);
+        String bookId = request.getParameter("bookId");
         String rawDate = request.getParameter("dueDate");
-        if (studentId == 0 || bookId == 0 || rawDate == null || !rawDate.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}")) {
+        if (studentId == 0 || (bookId == null || !bookId.matches("[0-9]{3}-[0-9]{3}")) || rawDate == null || !rawDate.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}")) {
             showError(request, response, "학생, 도서, 반납 예정일을 확인하세요.");
             return;
         }
@@ -64,10 +64,21 @@ public class LoanServlet extends HttpServlet {
             return;
         }
         try {
-            if (loanDAO.borrow(studentId, bookId, Date.valueOf(dueDate))) {
+            LoanDAO.BorrowResult result = loanDAO.borrow(studentId, bookId, Date.valueOf(dueDate));
+            if (result == LoanDAO.BorrowResult.BORROWED) {
                 redirect(request, response, "borrowed");
                 return;
             }
+            String error = switch (result) {
+                case INACTIVE_STUDENT -> "학생이 없거나 이용 중지 상태입니다.";
+                case PENALIZED -> "대출 정지 기간에는 대출할 수 없습니다.";
+                case OVERDUE -> "연체 중인 도서를 먼저 반납하세요.";
+                case LIMIT_REACHED -> "미반납 도서가 최대 대출 권수에 도달했습니다.";
+                case UNAVAILABLE -> "대출 가능한 재고가 없거나 이용 중지된 도서입니다.";
+                case BORROWED -> throw new IllegalStateException("이미 처리한 대출 결과입니다.");
+            };
+            showError(request, response, error);
+            return;
         } catch (SQLException e) {
             getServletContext().log("대출 처리 실패", e);
         }
@@ -82,9 +93,11 @@ public class LoanServlet extends HttpServlet {
             return;
         }
         try {
-            switch (loanDAO.returnLoan(loanId)) {
+            LoanDAO.ReturnResult result = loanDAO.returnLoan(loanId);
+            switch (result.status()) {
                 case RETURNED -> {
-                    redirect(request, response, "returned");
+                    redirect(request, response, result.lateDays() > 0
+                            ? "returnedLate&days=" + result.lateDays() : "returned");
                     return;
                 }
                 case ALREADY_RETURNED -> {
@@ -117,6 +130,7 @@ public class LoanServlet extends HttpServlet {
 
     private void showList(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        request.setAttribute("maxLoanCount", LoanDAO.MAX_LOAN_COUNT);
         String keyword = request.getParameter("keyword");
         String status = request.getParameter("status");
         Status filter = Status.ALL;

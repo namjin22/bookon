@@ -3,6 +3,19 @@ package com.bookon.model;
 import java.sql.Date;
 
 public class Student {
+    private Date penaltyEndDate;
+    private boolean penalized;
+    private int loanCount;
+    private int overdueCount;
+
+    public Date getPenaltyEndDate() { return penaltyEndDate; }
+    public void setPenaltyEndDate(Date penaltyEndDate) { this.penaltyEndDate = penaltyEndDate; }
+    public boolean isPenalized() { return penalized; }
+    public void setPenalized(boolean penalized) { this.penalized = penalized; }
+    public int getLoanCount() { return loanCount; }
+    public void setLoanCount(int loanCount) { this.loanCount = loanCount; }
+    public int getOverdueCount() { return overdueCount; }
+    public void setOverdueCount(int overdueCount) { this.overdueCount = overdueCount; }
     private int studentId;
     private String studentNo;
     private String studentName;
