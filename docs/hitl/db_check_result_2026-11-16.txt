@@ -1,0 +1,591 @@
+SQL>
+SQL> PROMPT ===== A. session =====
+===== A. session =====
+SQL> SELECT USER AS CONNECTED_AS FROM DUAL;
+
+CONNECTED_AS
+------------------------------
+BOOKON
+
+1 row selected.
+
+SQL> SELECT value AS DB_CHARSET FROM nls_database_parameters WHERE parameter = 'NLS_CHARACTERSET';
+
+DB_CHARSET
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+AL32UTF8
+
+1 row selected.
+
+SQL> SELECT TO_CHAR(SYSDATE, 'YYYY-MM-DD HH24:MI:SS') AS RUN_AT FROM DUAL;
+
+RUN_AT
+-------------------
+2026-11-16 11:24:27
+
+1 row selected.
+
+SQL>
+SQL> PROMPT ===== B. repo 01_create_tables.sql =====
+===== B. repo 01_create_tables.sql =====
+SQL> @01_create_tables.sql
+SQL> BEGIN EXECUTE IMMEDIATE 'DROP TABLE TBL_LOAN PURGE';    EXCEPTION WHEN OTHERS THEN IF SQLCODE != -942  THEN RAISE; END IF; END;
+  2  /
+
+PL/SQL procedure successfully completed.
+
+SQL> BEGIN EXECUTE IMMEDIATE 'DROP TABLE TBL_BOOK PURGE';    EXCEPTION WHEN OTHERS THEN IF SQLCODE != -942  THEN RAISE; END IF; END;
+  2  /
+
+PL/SQL procedure successfully completed.
+
+SQL> BEGIN EXECUTE IMMEDIATE 'DROP TABLE TBL_STUDENT PURGE'; EXCEPTION WHEN OTHERS THEN IF SQLCODE != -942  THEN RAISE; END IF; END;
+  2  /
+
+PL/SQL procedure successfully completed.
+
+SQL> BEGIN EXECUTE IMMEDIATE 'DROP SEQUENCE SEQ_LOAN';	     EXCEPTION WHEN OTHERS THEN IF SQLCODE != -2289 THEN RAISE; END IF; END;
+  2  /
+
+PL/SQL procedure successfully completed.
+
+SQL> BEGIN EXECUTE IMMEDIATE 'DROP SEQUENCE SEQ_BOOK';	     EXCEPTION WHEN OTHERS THEN IF SQLCODE != -2289 THEN RAISE; END IF; END;
+  2  /
+
+PL/SQL procedure successfully completed.
+
+SQL> BEGIN EXECUTE IMMEDIATE 'DROP SEQUENCE SEQ_STUDENT';    EXCEPTION WHEN OTHERS THEN IF SQLCODE != -2289 THEN RAISE; END IF; END;
+  2  /
+
+PL/SQL procedure successfully completed.
+
+SQL>
+SQL> CREATE SEQUENCE SEQ_STUDENT START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
+
+Sequence created.
+
+SQL> CREATE SEQUENCE SEQ_BOOK	 START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
+
+Sequence created.
+
+SQL> CREATE SEQUENCE SEQ_LOAN	 START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
+
+Sequence created.
+
+SQL>
+SQL> CREATE TABLE TBL_BOOK (
+  2  	 BOOK_ID    NUMBER(6)		NOT NULL,
+  3  	 TITLE	    VARCHAR2(300 CHAR)	NOT NULL,
+  4  	 AUTHOR     VARCHAR2(100 CHAR)	NOT NULL,
+  5  	 PUBLISHER  VARCHAR2(100 CHAR),
+  6  	 TOTAL_QTY  NUMBER(3)		DEFAULT 1 NOT NULL,
+  7  	 AVAIL_QTY  NUMBER(3)		NOT NULL,
+  8  	 USE_YN     CHAR(1)		DEFAULT 'Y' NOT NULL,
+  9  	 REG_DATE   DATE		DEFAULT SYSDATE NOT NULL,
+ 10  	 CONSTRAINT PK_BOOK	   PRIMARY KEY (BOOK_ID),
+ 11  	 CONSTRAINT CK_BOOK_TOTAL  CHECK (TOTAL_QTY >= 1),
+ 12  	 CONSTRAINT CK_BOOK_AVAIL  CHECK (AVAIL_QTY BETWEEN 0 AND TOTAL_QTY),
+ 13  	 CONSTRAINT CK_BOOK_USE_YN CHECK (USE_YN IN ('Y', 'N'))
+ 14  );
+
+Table created.
+
+SQL>
+SQL> CREATE TABLE TBL_STUDENT (
+  2  	 STUDENT_ID    NUMBER(6)	  NOT NULL,
+  3  	 STUDENT_NO    VARCHAR2(10 CHAR)  NOT NULL,
+  4  	 STUDENT_NAME  VARCHAR2(30 CHAR)  NOT NULL,
+  5  	 PHONE	       VARCHAR2(13 CHAR),
+  6  	 USE_YN        CHAR(1)		  DEFAULT 'Y' NOT NULL,
+  7  	 REG_DATE      DATE		  DEFAULT SYSDATE NOT NULL,
+  8  	 CONSTRAINT PK_STUDENT	      PRIMARY KEY (STUDENT_ID),
+  9  	 CONSTRAINT UQ_STUDENT_NO     UNIQUE (STUDENT_NO),
+ 10  	 CONSTRAINT CK_STUDENT_USE_YN CHECK (USE_YN IN ('Y', 'N'))
+ 11  );
+
+Table created.
+
+SQL>
+SQL> CREATE TABLE TBL_LOAN (
+  2  	 LOAN_ID      NUMBER(8)  NOT NULL,
+  3  	 STUDENT_ID   NUMBER(6)  NOT NULL,
+  4  	 BOOK_ID      NUMBER(6)  NOT NULL,
+  5  	 LOAN_DATE    DATE	 DEFAULT TRUNC(SYSDATE) NOT NULL,
+  6  	 DUE_DATE     DATE	 NOT NULL,
+  7  	 RETURN_YN    CHAR(1)	 DEFAULT 'N' NOT NULL,
+  8  	 RETURN_DATE  DATE,
+  9  	 CONSTRAINT PK_LOAN	      PRIMARY KEY (LOAN_ID),
+ 10  	 CONSTRAINT FK_LOAN_STUDENT   FOREIGN KEY (STUDENT_ID) REFERENCES TBL_STUDENT (STUDENT_ID),
+ 11  	 CONSTRAINT FK_LOAN_BOOK      FOREIGN KEY (BOOK_ID)    REFERENCES TBL_BOOK (BOOK_ID),
+ 12  	 CONSTRAINT CK_LOAN_DUE       CHECK (DUE_DATE >= LOAN_DATE),
+ 13  	 CONSTRAINT CK_LOAN_RETURN_YN CHECK (RETURN_YN IN ('Y', 'N')),
+ 14  	 CONSTRAINT CK_LOAN_RETURN    CHECK ((RETURN_YN = 'N' AND RETURN_DATE IS NULL)
+ 15  					  OR (RETURN_YN = 'Y' AND RETURN_DATE IS NOT NULL)),
+ 16  	 CONSTRAINT CK_LOAN_RETURN_DATE CHECK (RETURN_DATE IS NULL OR RETURN_DATE >= LOAN_DATE)
+ 17  );
+
+Table created.
+
+SQL>
+SQL> CREATE INDEX IX_LOAN_STUDENT ON TBL_LOAN (STUDENT_ID);
+
+Index created.
+
+SQL> CREATE INDEX IX_LOAN_BOOK	  ON TBL_LOAN (BOOK_ID);
+
+Index created.
+
+SQL> CREATE INDEX IX_LOAN_RETURN  ON TBL_LOAN (RETURN_YN);
+
+Index created.
+
+SQL>
+SQL> SELECT table_name FROM user_tables ORDER BY table_name;
+
+TABLE_NAME
+------------------------------
+TBL_BOOK
+TBL_LOAN
+TBL_STUDENT
+
+3 rows selected.
+
+SQL> SELECT constraint_name, constraint_type, table_name FROM user_constraints WHERE table_name LIKE 'TBL%' ORDER BY table_name, constraint_type;
+
+CONSTRAINT_NAME                C TABLE_NAME
+------------------------------ - ------------------------------
+SYS_C007957                    C TBL_BOOK
+SYS_C007956                    C TBL_BOOK
+SYS_C007955                    C TBL_BOOK
+SYS_C007954                    C TBL_BOOK
+SYS_C007958                    C TBL_BOOK
+SYS_C007959                    C TBL_BOOK
+SYS_C007960                    C TBL_BOOK
+CK_BOOK_TOTAL                  C TBL_BOOK
+CK_BOOK_AVAIL                  C TBL_BOOK
+CK_BOOK_USE_YN                 C TBL_BOOK
+PK_BOOK                        P TBL_BOOK
+SYS_C007976                    C TBL_LOAN
+SYS_C007975                    C TBL_LOAN
+SYS_C007974                    C TBL_LOAN
+SYS_C007973                    C TBL_LOAN
+SYS_C007977                    C TBL_LOAN
+CK_LOAN_RETURN_DATE            C TBL_LOAN
+CK_LOAN_RETURN                 C TBL_LOAN
+CK_LOAN_RETURN_YN              C TBL_LOAN
+CK_LOAN_DUE                    C TBL_LOAN
+SYS_C007978                    C TBL_LOAN
+PK_LOAN                        P TBL_LOAN
+FK_LOAN_STUDENT                R TBL_LOAN
+FK_LOAN_BOOK                   R TBL_LOAN
+CK_STUDENT_USE_YN              C TBL_STUDENT
+SYS_C007969                    C TBL_STUDENT
+SYS_C007967                    C TBL_STUDENT
+SYS_C007968                    C TBL_STUDENT
+SYS_C007965                    C TBL_STUDENT
+SYS_C007966                    C TBL_STUDENT
+PK_STUDENT                     P TBL_STUDENT
+UQ_STUDENT_NO                  U TBL_STUDENT
+
+32 rows selected.
+
+SQL> SELECT sequence_name FROM user_sequences ORDER BY sequence_name;
+
+SEQUENCE_NAME
+------------------------------
+SEQ_BOOK
+SEQ_LOAN
+SEQ_STUDENT
+
+3 rows selected.
+
+SQL> SELECT value FROM nls_database_parameters WHERE parameter = 'NLS_CHARACTERSET';
+
+VALUE
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+AL32UTF8
+
+1 row selected.
+
+SQL>
+SQL> PROMPT ===== C. repo 02_sample_data.sql (UTF-8 file) =====
+===== C. repo 02_sample_data.sql (UTF-8 file) =====
+SQL> @02_sample_data.sql
+SQL> SET DEFINE OFF
+SQL>
+SQL> DELETE FROM TBL_LOAN;
+
+0 rows deleted.
+
+SQL> DELETE FROM TBL_BOOK;
+
+0 rows deleted.
+
+SQL> DELETE FROM TBL_STUDENT;
+
+0 rows deleted.
+
+SQL>
+SQL> BEGIN EXECUTE IMMEDIATE 'DROP SEQUENCE SEQ_LOAN'; EXCEPTION WHEN OTHERS THEN IF SQLCODE != -2289 THEN RAISE; END IF; END;
+  2  /
+
+PL/SQL procedure successfully completed.
+
+SQL> BEGIN EXECUTE IMMEDIATE 'DROP SEQUENCE SEQ_BOOK'; EXCEPTION WHEN OTHERS THEN IF SQLCODE != -2289 THEN RAISE; END IF; END;
+  2  /
+
+PL/SQL procedure successfully completed.
+
+SQL> BEGIN EXECUTE IMMEDIATE 'DROP SEQUENCE SEQ_STUDENT'; EXCEPTION WHEN OTHERS THEN IF SQLCODE != -2289 THEN RAISE; END IF; END;
+  2  /
+
+PL/SQL procedure successfully completed.
+
+SQL> CREATE SEQUENCE SEQ_STUDENT START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
+
+Sequence created.
+
+SQL> CREATE SEQUENCE SEQ_BOOK	 START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
+
+Sequence created.
+
+SQL> CREATE SEQUENCE SEQ_LOAN	 START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE;
+
+Sequence created.
+
+SQL>
+SQL> INSERT INTO TBL_STUDENT (STUDENT_ID, STUDENT_NO, STUDENT_NAME, PHONE, USE_YN, REG_DATE) VALUES (SEQ_STUDENT.NEXTVAL, '10112', '정도윤', '010-4821-1012', 'Y', TRUNC(SYSDATE) - 70);
+
+1 row created.
+
+SQL> INSERT INTO TBL_STUDENT (STUDENT_ID, STUDENT_NO, STUDENT_NAME, PHONE, USE_YN, REG_DATE) VALUES (SEQ_STUDENT.NEXTVAL, '10227', '강하은', '010-3390-2227', 'Y', TRUNC(SYSDATE) - 70);
+
+1 row created.
+
+SQL> INSERT INTO TBL_STUDENT (STUDENT_ID, STUDENT_NO, STUDENT_NAME, PHONE, USE_YN, REG_DATE) VALUES (SEQ_STUDENT.NEXTVAL, '20101', '김민준', '010-5521-2101', 'Y', TRUNC(SYSDATE) - 60);
+
+1 row created.
+
+SQL> INSERT INTO TBL_STUDENT (STUDENT_ID, STUDENT_NO, STUDENT_NAME, PHONE, USE_YN, REG_DATE) VALUES (SEQ_STUDENT.NEXTVAL, '20102', '이서연', '010-7743-2102', 'Y', TRUNC(SYSDATE) - 60);
+
+1 row created.
+
+SQL> INSERT INTO TBL_STUDENT (STUDENT_ID, STUDENT_NO, STUDENT_NAME, PHONE, USE_YN, REG_DATE) VALUES (SEQ_STUDENT.NEXTVAL, '20215', '박지호', NULL, 'Y', TRUNC(SYSDATE) - 55);
+
+1 row created.
+
+SQL> INSERT INTO TBL_STUDENT (STUDENT_ID, STUDENT_NO, STUDENT_NAME, PHONE, USE_YN, REG_DATE) VALUES (SEQ_STUDENT.NEXTVAL, '20308', '최수아', '010-2967-2308', 'Y', TRUNC(SYSDATE) - 50);
+
+1 row created.
+
+SQL> INSERT INTO TBL_STUDENT (STUDENT_ID, STUDENT_NO, STUDENT_NAME, PHONE, USE_YN, REG_DATE) VALUES (SEQ_STUDENT.NEXTVAL, '30105', '윤서준', '010-6154-3105', 'Y', TRUNC(SYSDATE) - 45);
+
+1 row created.
+
+SQL> INSERT INTO TBL_STUDENT (STUDENT_ID, STUDENT_NO, STUDENT_NAME, PHONE, USE_YN, REG_DATE) VALUES (SEQ_STUDENT.NEXTVAL, '30320', '임지우', '010-8812-3320', 'N', TRUNC(SYSDATE) - 45);
+
+1 row created.
+
+SQL>
+SQL> INSERT INTO TBL_BOOK (BOOK_ID, TITLE, AUTHOR, PUBLISHER, TOTAL_QTY, AVAIL_QTY, USE_YN, REG_DATE) VALUES (SEQ_BOOK.NEXTVAL, '소년이 온다', '한강', '창비', 3, 2, 'Y', TRUNC(SYSDATE) - 90);
+
+1 row created.
+
+SQL> INSERT INTO TBL_BOOK (BOOK_ID, TITLE, AUTHOR, PUBLISHER, TOTAL_QTY, AVAIL_QTY, USE_YN, REG_DATE) VALUES (SEQ_BOOK.NEXTVAL, '채식주의자', '한강', '창비', 2, 2, 'Y', TRUNC(SYSDATE) - 90);
+
+1 row created.
+
+SQL> INSERT INTO TBL_BOOK (BOOK_ID, TITLE, AUTHOR, PUBLISHER, TOTAL_QTY, AVAIL_QTY, USE_YN, REG_DATE) VALUES (SEQ_BOOK.NEXTVAL, '82년생 김지영', '조남주', '민음사', 2, 2, 'Y', TRUNC(SYSDATE) - 90);
+
+1 row created.
+
+SQL> INSERT INTO TBL_BOOK (BOOK_ID, TITLE, AUTHOR, PUBLISHER, TOTAL_QTY, AVAIL_QTY, USE_YN, REG_DATE) VALUES (SEQ_BOOK.NEXTVAL, '불편한 편의점', '김호연', '나무옆의자', 3, 2, 'Y', TRUNC(SYSDATE) - 90);
+
+1 row created.
+
+SQL> INSERT INTO TBL_BOOK (BOOK_ID, TITLE, AUTHOR, PUBLISHER, TOTAL_QTY, AVAIL_QTY, USE_YN, REG_DATE) VALUES (SEQ_BOOK.NEXTVAL, '아몬드', '손원평', '창비', 2, 2, 'Y', TRUNC(SYSDATE) - 90);
+
+1 row created.
+
+SQL> INSERT INTO TBL_BOOK (BOOK_ID, TITLE, AUTHOR, PUBLISHER, TOTAL_QTY, AVAIL_QTY, USE_YN, REG_DATE) VALUES (SEQ_BOOK.NEXTVAL, '달러구트 꿈 백화점', '이미예', '팩토리나인', 2, 1, 'Y', TRUNC(SYSDATE) - 90);
+
+1 row created.
+
+SQL> INSERT INTO TBL_BOOK (BOOK_ID, TITLE, AUTHOR, PUBLISHER, TOTAL_QTY, AVAIL_QTY, USE_YN, REG_DATE) VALUES (SEQ_BOOK.NEXTVAL, '파친코', '이민진', '인플루엔셜', 2, 1, 'Y', TRUNC(SYSDATE) - 90);
+
+1 row created.
+
+SQL> INSERT INTO TBL_BOOK (BOOK_ID, TITLE, AUTHOR, PUBLISHER, TOTAL_QTY, AVAIL_QTY, USE_YN, REG_DATE) VALUES (SEQ_BOOK.NEXTVAL, '코스모스', '칼 세이건', '사이언스북스', 1, 1, 'Y', TRUNC(SYSDATE) - 90);
+
+1 row created.
+
+SQL> INSERT INTO TBL_BOOK (BOOK_ID, TITLE, AUTHOR, PUBLISHER, TOTAL_QTY, AVAIL_QTY, USE_YN, REG_DATE) VALUES (SEQ_BOOK.NEXTVAL, '총, 균, 쇠', '재레드 다이아몬드', '문학사상', 1, 1, 'Y', TRUNC(SYSDATE) - 90);
+
+1 row created.
+
+SQL> INSERT INTO TBL_BOOK (BOOK_ID, TITLE, AUTHOR, PUBLISHER, TOTAL_QTY, AVAIL_QTY, USE_YN, REG_DATE) VALUES (SEQ_BOOK.NEXTVAL, '사피엔스', '유발 하라리', '김영사', 3, 3, 'Y', TRUNC(SYSDATE) - 90);
+
+1 row created.
+
+SQL> INSERT INTO TBL_BOOK (BOOK_ID, TITLE, AUTHOR, PUBLISHER, TOTAL_QTY, AVAIL_QTY, USE_YN, REG_DATE) VALUES (SEQ_BOOK.NEXTVAL, '어린 왕자', '앙투안 드 생텍쥐페리', '열린책들', 2, 2, 'Y', TRUNC(SYSDATE) - 90);
+
+1 row created.
+
+SQL> INSERT INTO TBL_BOOK (BOOK_ID, TITLE, AUTHOR, PUBLISHER, TOTAL_QTY, AVAIL_QTY, USE_YN, REG_DATE) VALUES (SEQ_BOOK.NEXTVAL, '데미안', '헤르만 헤세', '민음사', 1, 1, 'N', TRUNC(SYSDATE) - 90);
+
+1 row created.
+
+SQL> INSERT INTO TBL_BOOK (BOOK_ID, TITLE, AUTHOR, PUBLISHER, TOTAL_QTY, AVAIL_QTY, USE_YN, REG_DATE) VALUES (SEQ_BOOK.NEXTVAL, '해리 포터와 마법사의 돌', 'J.K. 롤링', '문학수첩', 3, 3, 'Y', TRUNC(SYSDATE) - 90);
+
+1 row created.
+
+SQL> INSERT INTO TBL_BOOK (BOOK_ID, TITLE, AUTHOR, PUBLISHER, TOTAL_QTY, AVAIL_QTY, USE_YN, REG_DATE) VALUES (SEQ_BOOK.NEXTVAL, '나미야 잡화점의 기적', '히가시노 게이고', '현대문학', 2, 2, 'Y', TRUNC(SYSDATE) - 90);
+
+1 row created.
+
+SQL> INSERT INTO TBL_BOOK (BOOK_ID, TITLE, AUTHOR, PUBLISHER, TOTAL_QTY, AVAIL_QTY, USE_YN, REG_DATE) VALUES (SEQ_BOOK.NEXTVAL, '이기적 유전자', '리처드 도킨스', '을유문화사', 1, 1, 'Y', TRUNC(SYSDATE) - 90);
+
+1 row created.
+
+SQL> INSERT INTO TBL_BOOK (BOOK_ID, TITLE, AUTHOR, PUBLISHER, TOTAL_QTY, AVAIL_QTY, USE_YN, REG_DATE) VALUES (SEQ_BOOK.NEXTVAL, '클린 코드', '로버트 C. 마틴', '인사이트', 1, 0, 'Y', TRUNC(SYSDATE) - 90);
+
+1 row created.
+
+SQL> INSERT INTO TBL_BOOK (BOOK_ID, TITLE, AUTHOR, PUBLISHER, TOTAL_QTY, AVAIL_QTY, USE_YN, REG_DATE) VALUES (SEQ_BOOK.NEXTVAL, '혼자 공부하는 자바', '신용권', '한빛미디어', 2, 1, 'Y', TRUNC(SYSDATE) - 90);
+
+1 row created.
+
+SQL> INSERT INTO TBL_BOOK (BOOK_ID, TITLE, AUTHOR, PUBLISHER, TOTAL_QTY, AVAIL_QTY, USE_YN, REG_DATE) VALUES (SEQ_BOOK.NEXTVAL, 'SQL 첫걸음', '아사이 아츠시', '한빛미디어', 2, 2, 'Y', TRUNC(SYSDATE) - 90);
+
+1 row created.
+
+SQL>
+SQL> INSERT INTO TBL_LOAN (LOAN_ID, STUDENT_ID, BOOK_ID, LOAN_DATE, DUE_DATE, RETURN_YN, RETURN_DATE) VALUES (SEQ_LOAN.NEXTVAL, (SELECT STUDENT_ID FROM TBL_STUDENT WHERE STUDENT_NO = '20101'), (SELECT BOOK_ID FROM TBL_BOOK WHERE TITLE = '소년이 온다'), TRUNC(SYSDATE) - 20, TRUNC(SYSDATE) - 6, 'Y', TRUNC(SYSDATE) - 9);
+
+1 row created.
+
+SQL> INSERT INTO TBL_LOAN (LOAN_ID, STUDENT_ID, BOOK_ID, LOAN_DATE, DUE_DATE, RETURN_YN, RETURN_DATE) VALUES (SEQ_LOAN.NEXTVAL, (SELECT STUDENT_ID FROM TBL_STUDENT WHERE STUDENT_NO = '20102'), (SELECT BOOK_ID FROM TBL_BOOK WHERE TITLE = '아몬드'), TRUNC(SYSDATE) - 18, TRUNC(SYSDATE) - 4, 'Y', TRUNC(SYSDATE) - 5);
+
+1 row created.
+
+SQL> INSERT INTO TBL_LOAN (LOAN_ID, STUDENT_ID, BOOK_ID, LOAN_DATE, DUE_DATE, RETURN_YN, RETURN_DATE) VALUES (SEQ_LOAN.NEXTVAL, (SELECT STUDENT_ID FROM TBL_STUDENT WHERE STUDENT_NO = '20215'), (SELECT BOOK_ID FROM TBL_BOOK WHERE TITLE = '사피엔스'), TRUNC(SYSDATE) - 15, TRUNC(SYSDATE) - 1, 'Y', TRUNC(SYSDATE) - 3);
+
+1 row created.
+
+SQL> INSERT INTO TBL_LOAN (LOAN_ID, STUDENT_ID, BOOK_ID, LOAN_DATE, DUE_DATE, RETURN_YN, RETURN_DATE) VALUES (SEQ_LOAN.NEXTVAL, (SELECT STUDENT_ID FROM TBL_STUDENT WHERE STUDENT_NO = '20102'), (SELECT BOOK_ID FROM TBL_BOOK WHERE TITLE = '해리 포터와 마법사의 돌'), TRUNC(SYSDATE) - 30, TRUNC(SYSDATE) - 16, 'Y', TRUNC(SYSDATE) - 17);
+
+1 row created.
+
+SQL> INSERT INTO TBL_LOAN (LOAN_ID, STUDENT_ID, BOOK_ID, LOAN_DATE, DUE_DATE, RETURN_YN, RETURN_DATE) VALUES (SEQ_LOAN.NEXTVAL, (SELECT STUDENT_ID FROM TBL_STUDENT WHERE STUDENT_NO = '20308'), (SELECT BOOK_ID FROM TBL_BOOK WHERE TITLE = '불편한 편의점'), TRUNC(SYSDATE) - 12, TRUNC(SYSDATE) + 2, 'N', NULL);
+
+1 row created.
+
+SQL> INSERT INTO TBL_LOAN (LOAN_ID, STUDENT_ID, BOOK_ID, LOAN_DATE, DUE_DATE, RETURN_YN, RETURN_DATE) VALUES (SEQ_LOAN.NEXTVAL, (SELECT STUDENT_ID FROM TBL_STUDENT WHERE STUDENT_NO = '30105'), (SELECT BOOK_ID FROM TBL_BOOK WHERE TITLE = '달러구트 꿈 백화점'), TRUNC(SYSDATE) - 3, TRUNC(SYSDATE) + 11, 'N', NULL);
+
+1 row created.
+
+SQL> INSERT INTO TBL_LOAN (LOAN_ID, STUDENT_ID, BOOK_ID, LOAN_DATE, DUE_DATE, RETURN_YN, RETURN_DATE) VALUES (SEQ_LOAN.NEXTVAL, (SELECT STUDENT_ID FROM TBL_STUDENT WHERE STUDENT_NO = '20101'), (SELECT BOOK_ID FROM TBL_BOOK WHERE TITLE = '소년이 온다'), TRUNC(SYSDATE) - 4, TRUNC(SYSDATE) + 10, 'N', NULL);
+
+1 row created.
+
+SQL> INSERT INTO TBL_LOAN (LOAN_ID, STUDENT_ID, BOOK_ID, LOAN_DATE, DUE_DATE, RETURN_YN, RETURN_DATE) VALUES (SEQ_LOAN.NEXTVAL, (SELECT STUDENT_ID FROM TBL_STUDENT WHERE STUDENT_NO = '20308'), (SELECT BOOK_ID FROM TBL_BOOK WHERE TITLE = '파친코'), TRUNC(SYSDATE) - 2, TRUNC(SYSDATE) + 12, 'N', NULL);
+
+1 row created.
+
+SQL> INSERT INTO TBL_LOAN (LOAN_ID, STUDENT_ID, BOOK_ID, LOAN_DATE, DUE_DATE, RETURN_YN, RETURN_DATE) VALUES (SEQ_LOAN.NEXTVAL, (SELECT STUDENT_ID FROM TBL_STUDENT WHERE STUDENT_NO = '10112'), (SELECT BOOK_ID FROM TBL_BOOK WHERE TITLE = '클린 코드'), TRUNC(SYSDATE) - 25, TRUNC(SYSDATE) - 11, 'N', NULL);
+
+1 row created.
+
+SQL> INSERT INTO TBL_LOAN (LOAN_ID, STUDENT_ID, BOOK_ID, LOAN_DATE, DUE_DATE, RETURN_YN, RETURN_DATE) VALUES (SEQ_LOAN.NEXTVAL, (SELECT STUDENT_ID FROM TBL_STUDENT WHERE STUDENT_NO = '10227'), (SELECT BOOK_ID FROM TBL_BOOK WHERE TITLE = '혼자 공부하는 자바'), TRUNC(SYSDATE) - 22, TRUNC(SYSDATE) - 8, 'N', NULL);
+
+1 row created.
+
+SQL>
+SQL> COMMIT;
+
+Commit complete.
+
+SQL>
+SQL> SELECT b.BOOK_ID, b.TITLE, b.TOTAL_QTY, b.AVAIL_QTY,
+  2  b.TOTAL_QTY - COUNT(CASE WHEN l.RETURN_YN = 'N' THEN 1 END) AS EXPECTED_AVAIL
+  3  FROM TBL_BOOK b
+  4  LEFT JOIN TBL_LOAN l ON l.BOOK_ID = b.BOOK_ID
+  5  GROUP BY b.BOOK_ID, b.TITLE, b.TOTAL_QTY, b.AVAIL_QTY
+  6  HAVING b.AVAIL_QTY <> b.TOTAL_QTY - COUNT(CASE WHEN l.RETURN_YN = 'N' THEN 1 END);
+
+no rows selected
+
+SQL>
+SQL> SELECT (SELECT COUNT(*) FROM TBL_BOOK) AS BOOKS, (SELECT COUNT(*) FROM TBL_STUDENT) AS STUDENTS, (SELECT COUNT(*) FROM TBL_LOAN) AS LOANS, (SELECT COUNT(*) FROM TBL_LOAN WHERE RETURN_YN = 'N') AS UNRETURNED, (SELECT COUNT(*) FROM TBL_LOAN WHERE RETURN_YN = 'N' AND DUE_DATE < TRUNC(SYSDATE)) AS OVERDUE FROM dual;
+
+     BOOKS   STUDENTS      LOANS UNRETURNED    OVERDUE
+---------- ---------- ---------- ---------- ----------
+        18          8         10          6          2
+
+1 row selected.
+
+SQL>
+SQL> SELECT l.LOAN_ID, s.STUDENT_NAME, b.TITLE, TO_CHAR(l.LOAN_DATE, 'YYYY-MM-DD') AS LOAN_DATE, TO_CHAR(l.DUE_DATE, 'YYYY-MM-DD') AS DUE_DATE,
+  2  CASE WHEN l.RETURN_YN = 'Y' THEN '반납완료' WHEN l.DUE_DATE < TRUNC(SYSDATE) THEN '연체' ELSE '미반납' END AS STATUS
+  3  FROM TBL_LOAN l
+  4  JOIN TBL_STUDENT s ON l.STUDENT_ID = s.STUDENT_ID
+  5  JOIN TBL_BOOK b ON l.BOOK_ID = b.BOOK_ID
+  6  ORDER BY l.LOAN_ID;
+
+   LOAN_ID STUDENT_NAME
+---------- ------------------------------------------------------------------------------------------------------------------------
+TITLE
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+LOAN_DATE  DUE_DATE   STATUS
+---------- ---------- ------------
+         1 김민준
+소년이 온다
+2026-10-27 2026-11-10 반납완료
+
+         2 이서연
+아몬드
+2026-10-29 2026-11-12 반납완료
+
+         3 박지호
+사피엔스
+2026-11-01 2026-11-15 반납완료
+
+         4 이서연
+해리 포터와 마법사의 돌
+2026-10-17 2026-10-31 반납완료
+
+         5 최수아
+불편한 편의점
+2026-11-04 2026-11-18 미반납
+
+         6 윤서준
+달러구트 꿈 백화점
+2026-11-13 2026-11-27 미반납
+
+         7 김민준
+소년이 온다
+2026-11-12 2026-11-26 미반납
+
+         8 최수아
+파친코
+2026-11-14 2026-11-28 미반납
+
+         9 정도윤
+클린 코드
+2026-10-22 2026-11-05 연체
+
+        10 강하은
+혼자 공부하는 자바
+2026-10-25 2026-11-08 연체
+
+
+10 rows selected.
+
+SQL>
+SQL> PROMPT ===== D. Korean check (expect LEN 6 for the title below) =====
+===== D. Korean check (expect LEN 6 for the title below) =====
+SQL> COLUMN TITLE FORMAT A30
+SQL> COLUMN ESC FORMAT A60
+SQL> SELECT TITLE, LENGTH(TITLE) AS LEN, ASCIISTR(TITLE) AS ESC FROM TBL_BOOK WHERE ROWNUM <= 3;
+
+TITLE                                 LEN ESC
+------------------------------ ---------- ------------------------------------------------------------
+소년이 온다                             6 \C18C\B144\C774 \C628\B2E4
+채식주의자                              5 \CC44\C2DD\C8FC\C758\C790
+82년생 김지영                           8 82\B144\C0DD \AE40\C9C0\C601
+
+3 rows selected.
+
+SQL> SELECT BOOK_ID, TITLE, LENGTH(TITLE) AS LEN, ASCIISTR(TITLE) AS ESC FROM TBL_BOOK WHERE TITLE = '소년이 온다';
+
+   BOOK_ID TITLE                                 LEN ESC
+---------- ------------------------------ ---------- ------------------------------------------------------------
+         1 소년이 온다                             6 \C18C\B144\C774 \C628\B2E4
+
+1 row selected.
+
+SQL> PROMPT expected ESC for the title: \C18C\B144\C774 \C628\B2E4
+expected ESC for the title: \C18C\B144\C774 \C628\B2E4
+SQL>
+SQL> PROMPT ===== E. 03 scenarios (one transaction, rolled back at the end) =====
+===== E. 03 scenarios (one transaction, rolled back at the end) =====
+SQL> @test_03.sql
+SQL>
+SQL> PROMPT === [1] stock 0 book: expect 0 rows updated ===
+=== [1] stock 0 book: expect 0 rows updated ===
+SQL> UPDATE TBL_BOOK SET AVAIL_QTY = AVAIL_QTY - 1 WHERE BOOK_ID = (SELECT BOOK_ID FROM TBL_BOOK WHERE AVAIL_QTY = 0) AND USE_YN = 'Y' AND AVAIL_QTY > 0;
+
+0 rows updated.
+
+SQL>
+SQL> PROMPT === [2] inactive book: expect 0 rows updated ===
+=== [2] inactive book: expect 0 rows updated ===
+SQL> UPDATE TBL_BOOK SET AVAIL_QTY = AVAIL_QTY - 1 WHERE BOOK_ID = (SELECT BOOK_ID FROM TBL_BOOK WHERE USE_YN = 'N') AND USE_YN = 'Y' AND AVAIL_QTY > 0;
+
+0 rows updated.
+
+SQL>
+SQL> PROMPT === [3] inactive student loan: expect 0 rows created ===
+=== [3] inactive student loan: expect 0 rows created ===
+SQL> INSERT INTO TBL_LOAN (LOAN_ID, STUDENT_ID, BOOK_ID, LOAN_DATE, DUE_DATE, RETURN_YN) SELECT SEQ_LOAN.NEXTVAL, s.STUDENT_ID, 1, TRUNC(SYSDATE), TRUNC(SYSDATE) + 14, 'N' FROM TBL_STUDENT s WHERE s.STUDENT_ID = (SELECT STUDENT_ID FROM TBL_STUDENT WHERE USE_YN = 'N') AND s.USE_YN = 'Y';
+
+0 rows created.
+
+SQL>
+SQL> PROMPT === [4] normal loan (book 1, student 1): expect 1 row updated, 1 row created ===
+=== [4] normal loan (book 1, student 1): expect 1 row updated, 1 row created ===
+SQL> UPDATE TBL_BOOK SET AVAIL_QTY = AVAIL_QTY - 1 WHERE BOOK_ID = 1 AND USE_YN = 'Y' AND AVAIL_QTY > 0;
+
+1 row updated.
+
+SQL> INSERT INTO TBL_LOAN (LOAN_ID, STUDENT_ID, BOOK_ID, LOAN_DATE, DUE_DATE, RETURN_YN) SELECT SEQ_LOAN.NEXTVAL, s.STUDENT_ID, 1, TRUNC(SYSDATE), TRUNC(SYSDATE) + 14, 'N' FROM TBL_STUDENT s WHERE s.STUDENT_ID = 1 AND s.USE_YN = 'Y';
+
+1 row created.
+
+SQL>
+SQL> PROMPT === [5] return LOAN_ID 5 first time: expect 1 row updated, then stock restore 1 row updated ===
+=== [5] return LOAN_ID 5 first time: expect 1 row updated, then stock restore 1 row updated ===
+SQL> UPDATE TBL_LOAN SET RETURN_YN = 'Y', RETURN_DATE = TRUNC(SYSDATE) WHERE LOAN_ID = 5 AND RETURN_YN = 'N';
+
+1 row updated.
+
+SQL> UPDATE TBL_BOOK SET AVAIL_QTY = AVAIL_QTY + 1 WHERE BOOK_ID = (SELECT BOOK_ID FROM TBL_LOAN WHERE LOAN_ID = 5);
+
+1 row updated.
+
+SQL>
+SQL> PROMPT === [6] return LOAN_ID 5 second time: expect 0 rows updated (stock restore is skipped) ===
+=== [6] return LOAN_ID 5 second time: expect 0 rows updated (stock restore is skipped) ===
+SQL> UPDATE TBL_LOAN SET RETURN_YN = 'Y', RETURN_DATE = TRUNC(SYSDATE) WHERE LOAN_ID = 5 AND RETURN_YN = 'N';
+
+0 rows updated.
+
+SQL>
+SQL> PROMPT === [7] consistency check: expect no rows selected ===
+=== [7] consistency check: expect no rows selected ===
+SQL> SELECT b.BOOK_ID, b.TITLE, b.TOTAL_QTY, b.AVAIL_QTY,
+  2  b.TOTAL_QTY - COUNT(CASE WHEN l.RETURN_YN = 'N' THEN 1 END) AS EXPECTED_AVAIL
+  3  FROM TBL_BOOK b
+  4  LEFT JOIN TBL_LOAN l ON l.BOOK_ID = b.BOOK_ID
+  5  GROUP BY b.BOOK_ID, b.TITLE, b.TOTAL_QTY, b.AVAIL_QTY
+  6  HAVING b.AVAIL_QTY <> b.TOTAL_QTY - COUNT(CASE WHEN l.RETURN_YN = 'N' THEN 1 END);
+
+no rows selected
+
+SQL> ROLLBACK;
+
+Rollback complete.
+
+SQL>
+SQL> PROMPT ===== F. after ROLLBACK: must equal 02 state (18, 8, 10, 6, 2) =====
+===== F. after ROLLBACK: must equal 02 state (18, 8, 10, 6, 2) =====
+SQL> SELECT (SELECT COUNT(*) FROM TBL_BOOK) AS BOOKS, (SELECT COUNT(*) FROM TBL_STUDENT) AS STUDENTS, (SELECT COUNT(*) FROM TBL_LOAN) AS LOANS, (SELECT COUNT(*) FROM TBL_LOAN WHERE RETURN_YN = 'N') AS UNRETURNED, (SELECT COUNT(*) FROM TBL_LOAN WHERE RETURN_YN = 'N' AND DUE_DATE < TRUNC(SYSDATE)) AS OVERDUE FROM dual;
+
+     BOOKS   STUDENTS      LOANS UNRETURNED    OVERDUE
+---------- ---------- ---------- ---------- ----------
+        18          8         10          6          2
+
+1 row selected.
+
+SQL>
+SQL> SPOOL OFF
