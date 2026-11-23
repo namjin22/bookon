@@ -24,6 +24,19 @@
 
 환경: JDK 21.0.10 + Tomcat 10.1.52 (포트 8081, 8080은 Oracle XE가 사용 중), 컨텍스트 `/bookon`. 서블릿 소스(`src/main/java`)를 컴파일해 함께 배포했고 `db.properties`는 없는 상태.
 
+### v2 연동 상태 (2026-11-23)
+
+이번 확인에서는 로컬 Oracle XE가 설치되어 있지 않아 `01_create_tables.sql`/`02_sample_data.sql` 실행 및 실제 서블릿 화면 캡처를 수행하지 않았다. 따라서 아래 항목은 **소스 대조 결과**이며, 직접 실행 검증 결과로 기록하지 않는다. 실제 DB 검증은 Oracle 접속 가능한 팀원 환경에서 다시 수행한다.
+
+| 항목 | 소스 대조 결과 | 실제 실행 검증 |
+|---|---|---|
+| 도서 코드 | `book/list.jsp`는 문자열 `bookId`를 URL·폼 값으로 사용한다. `book/form.jsp`의 수정 모드 판단은 v1 숫자 비교(`book.bookId > 0`)이고 등록용 `kdc` 입력이 없어 v2 계약에 맞게 수정이 필요하다. | 대기 |
+| 학생 상태 | `student/list.jsp`에 이용 안 함·대출 정지·연체 중·이용 가능 상태 우선순위 표시가 아직 없다. | 대기 |
+| 대출 규칙 안내 | `loan/list.jsp`는 기존 `borrowed`/`returned`/`alreadyReturned` 배너와 오류 영역을 표시한다. `returnedLate` 및 `days` 배너, `maxLoanCount`/학생 상태 표시는 추가가 필요하다. | 대기 |
+| 대시보드 | `main.jsp`는 `totalBookCount`, `availableBookCount`, `loanedCount`, `overdueCount`, `recentLoans` 계약 필드를 사용한다. | 대기 |
+
+로컬 전용 `src/main/java/db.properties`에는 `bookon` 계정을 설정했으며 `.gitignore` 적용 상태를 확인했다. 비밀번호와 설정 파일은 커밋하지 않는다.
+
 | 날짜 | 무엇을 | 어떻게(직접 실행) | 결과 | 캡처/증거 |
 |---|---|---|---|---|
 | 2026-11-16 | 도서 목록 JSP 직접 열기 | `/bookon/book/list.jsp` | 200, 헤더·스타일 정상, "등록된 도서가 없습니다." 표시 | `view/view-01-book-list.png` |
