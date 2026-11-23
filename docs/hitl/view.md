@@ -38,6 +38,8 @@
 
 로컬 전용 `src/main/java/db.properties`에는 `bookon` 계정을 설정했으며 `.gitignore` 적용 상태를 확인했다. 비밀번호와 설정 파일은 커밋하지 않는다.
 
+> **갱신 (2026-11-23, 2번):** 위 표는 2번의 v2 JSP가 push되기 전 main 기준이다. 같은 날 v2 JSP(`not empty book.bookId`, `kdc` 입력, 학생 상태 우선순위, `returnedLate` 배너, `maxLoanCount` 표시)를 push했고, 2번 PC의 Oracle XE에서 01 → 02를 실행해 실제 서블릿으로 검증했다. 결과는 아래 **"v2 (contract §8) — 실제 서블릿 + Oracle 연동 테스트"** 표에 있다. 위 표의 "대기" 항목은 모두 그 표에서 확인 완료.
+
 | 날짜 | 무엇을 | 어떻게(직접 실행) | 결과 | 캡처/증거 |
 |---|---|---|---|---|
 | 2026-11-16 | 도서 목록 JSP 직접 열기 | `/bookon/book/list.jsp` | 200, 헤더·스타일 정상, "등록된 도서가 없습니다." 표시 | `view/view-01-book-list.png` |
